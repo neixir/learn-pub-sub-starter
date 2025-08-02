@@ -11,11 +11,10 @@ import (
 )
 
 func main() {
-	connectionString := "amqp://guest:guest@localhost:5672/"
-
 	fmt.Println("Starting Peril server...")
 
 	// Creating the connection
+	connectionString := "amqp://guest:guest@localhost:5672/"
 	conn, err := amqp.Dial(connectionString)
 
 	if err != nil {
