@@ -40,6 +40,37 @@ func main() {
 
 	fmt.Printf("channel: %v\nqueue: %v\n", channel, queue)
 
-	fmt.Println("Press Enter to exit...")
-	fmt.Scanln()
+	gamestate := gamelogic.NewGameState(username)
+
+	quitGame := false
+	for !quitGame {
+		input := gamelogic.GetInput()
+		if len(input) == 0 {
+			continue
+		}
+
+		switch input[0] {
+		case "spawn":
+			gamestate.CommandSpawn(input)
+		case "move":
+			_, err := gamestate.CommandMove(input)
+			if err != nil {
+				fmt.Println(err)
+			}
+		case "status":
+			gamestate.CommandStatus()
+		case "help":
+			gamelogic.PrintClientHelp()
+		case "spam":
+			fmt.Println("Spamming not allowed yet!")
+		case "quit":
+			gamelogic.PrintQuit()
+			quitGame = true
+		default:
+			fmt.Println("Unknown command.")
+		}
+	}
+
+	// fmt.Println("Press Enter to exit...")
+	// fmt.Scanln()
 }
