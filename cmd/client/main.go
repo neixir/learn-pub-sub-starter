@@ -40,7 +40,10 @@ func main() {
 
 	fmt.Printf("channel: %v\nqueue: %v\n", channel, queue)
 
+	// Create the game state
 	gamestate := gamelogic.NewGameState(username)
+
+	pubsub.SubscribeJSON(conn, routing.ExchangePerilDirect, queueName, routing.PauseKey, pubsub.QueueTypeTransient, handlerPause(gamestate))
 
 	quitGame := false
 	for !quitGame {
@@ -73,4 +76,12 @@ func main() {
 
 	// fmt.Println("Press Enter to exit...")
 	// fmt.Scanln()
+}
+
+func handlerPause(gs *gamelogic.GameState) func(routing.PlayingState) {
+
+	return func(ps routing.PlayingState) {
+		defer fmt.Print("> ")
+		gs.HandlePause(ps)
+	}
 }
