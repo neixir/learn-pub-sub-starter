@@ -78,6 +78,11 @@ func SubscribeJSON[T any](
 		return err
 	}
 
+	err = channel.QueueBind(queueName, key, exchange, false, amqp.Table{})
+	if err != nil {
+		return err
+	}
+
 	// 2. Get a new chan of amqp.Delivery structs by using the channel.Consume method.
 	// 2.1. Use an empty string for the consumer name so that it will be auto-generated
 	// 2.2 Set all other parameters to false/nil
@@ -94,7 +99,7 @@ func SubscribeJSON[T any](
 			var t T
 			err := json.Unmarshal(del.Body, &t)
 			if err != nil {
-				fmt.Printf(err.Error())
+				fmt.Println(err.Error())
 			}
 
 			// 3.2 Call the given handler function with the unmarshaled message
