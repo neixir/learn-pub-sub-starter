@@ -15,6 +15,14 @@ const (
 	QueueTypeTransient SimpleQueueType = "transient"
 )
 
+type Acktype int
+
+const (
+	Ack Acktype = iota
+	NackRequeue
+	NackDiscard
+)
+
 func PublishJSON[T any](ch *amqp.Channel, exchange, key string, val T) error {
 	b, err := json.Marshal(val)
 	if err != nil {
@@ -65,7 +73,7 @@ func SubscribeJSON[T any](
 	queueName,
 	key string,
 	queueType SimpleQueueType, // an enum to represent "durable" or "transient"
-	handler func(T),
+	handler func(T) Acktype,
 ) error {
 	channel, err := conn.Channel()
 	if err != nil {
@@ -94,19 +102,26 @@ func SubscribeJSON[T any](
 
 	// 3. Start a goroutine that ranges over the channel of deliveries, and for each message:
 	go func() {
-		for del := range deliveries {
+		for msg := range deliveries {
 			// 3.1 Unmarshal the body (raw bytes) of each message delivery into the (generic) T type.
 			var t T
-			err := json.Unmarshal(del.Body, &t)
+			err := json.Unmarshal(msg.Body, &t)
 			if err != nil {
 				fmt.Println(err.Error())
 			}
 
-			// 3.2 Call the given handler function with the unmarshaled message
-			handler(t)
+			ack := handler(t)
 
-			// 3.3 Acknowledge the message with delivery.Ack(false) to remove it from the queue
-			del.Ack(false)
+			// Depending on the returned "acktype", the goroutine that calls the handler should either call...
+			switch ack {
+			case Ack:
+				msg.Ack(false)
+			case NackRequeue:
+				msg.Nack(false, true)
+			case NackDiscard:
+				msg.Nack(false, false)
+			}
+
 		}
 	}()
 

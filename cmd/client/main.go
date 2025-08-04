@@ -95,16 +95,31 @@ func main() {
 	// fmt.Scanln()
 }
 
-func handlerPause(gs *gamelogic.GameState) func(routing.PlayingState) {
-	return func(ps routing.PlayingState) {
+func handlerPause(gs *gamelogic.GameState) func(routing.PlayingState) pubsub.Acktype {
+	return func(ps routing.PlayingState) pubsub.Acktype {
 		defer fmt.Print("> ")
 		gs.HandlePause(ps)
+		fmt.Printf("Ack, because it's a PAUSE")
+		return pubsub.Ack
 	}
 }
 
-func handlerMove(gs *gamelogic.GameState) func(gamelogic.ArmyMove) {
-	return func(move gamelogic.ArmyMove) {
+func handlerMove(gs *gamelogic.GameState) func(gamelogic.ArmyMove) pubsub.Acktype {
+	return func(move gamelogic.ArmyMove) pubsub.Acktype {
 		defer fmt.Print("> ")
-		gs.HandleMove(move)
+		outcome := gs.HandleMove(move)
+
+		if outcome == gamelogic.MoveOutComeSafe || outcome == gamelogic.MoveOutcomeMakeWar {
+			fmt.Printf("Ack, because move outcome is 'safe' or 'make war'")
+			return pubsub.Ack
+		}
+
+		if outcome == gamelogic.MoveOutcomeSamePlayer {
+			fmt.Printf("NackDiscard, because move outcome is 'same player'")
+			return pubsub.NackDiscard
+		}
+
+		fmt.Printf("NackDiscard, because move outcome is... something else")
+		return pubsub.NackDiscard
 	}
 }
