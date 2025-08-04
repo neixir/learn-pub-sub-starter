@@ -55,13 +55,18 @@ func DeclareAndBind(
 	// The durable parameter should only be true if queueType is durable.
 	// The autoDelete parameter should be true if queueType is transient.
 	// The exclusive parameter should be true if queueType is transient.
-	queue, err := channel.QueueDeclare(queueName, queueType == QueueTypeDurable, queueType == QueueTypeTransient, queueType == QueueTypeTransient, false, nil)
+	// It should pass in an amqp.Table to the QueueDeclare function that includes a x-dead-letter-exchange key.
+	// The value should be the name of your dead letter exchange ("peril_idx")
+	table := amqp.Table{
+		"x-dead-letter-exchange": "peril_dlx",
+	}
+
+	queue, err := channel.QueueDeclare(queueName, queueType == QueueTypeDurable, queueType == QueueTypeTransient, queueType == QueueTypeTransient, false, table)
 	if err != nil {
 		return nil, amqp.Queue{}, err
 	}
 
-	// func (ch *Channel) QueueBind(name, key, exchange string, noWait bool, args Table) error
-	err = channel.QueueBind(queueName, key, exchange, false, amqp.Table{})
+	err = channel.QueueBind(queueName, key, exchange, false, table)
 
 	return channel, queue, err
 
@@ -75,18 +80,7 @@ func SubscribeJSON[T any](
 	queueType SimpleQueueType, // an enum to represent "durable" or "transient"
 	handler func(T) Acktype,
 ) error {
-	channel, err := conn.Channel()
-	if err != nil {
-		return err
-	}
-
-	// Call DeclareAndBind to make sure that the given queue exists and is bound to the exchange
-	queue, err := channel.QueueDeclare(queueName, queueType == QueueTypeDurable, queueType == QueueTypeTransient, queueType == QueueTypeTransient, false, nil)
-	if err != nil {
-		return err
-	}
-
-	err = channel.QueueBind(queueName, key, exchange, false, amqp.Table{})
+	channel, queue, err := DeclareAndBind(conn, exchange, queueName, key, queueType)
 	if err != nil {
 		return err
 	}
