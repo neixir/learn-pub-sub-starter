@@ -11,8 +11,8 @@ import (
 type SimpleQueueType string
 
 const (
-	QueueTypeDurable   SimpleQueueType = "durable"
-	QueueTypeTransient SimpleQueueType = "transient"
+	SimpleQueueTypeDurable   SimpleQueueType = "durable"
+	SimpleQueueTypeTransient SimpleQueueType = "transient"
 )
 
 type Acktype int
@@ -61,7 +61,7 @@ func DeclareAndBind(
 		"x-dead-letter-exchange": "peril_dlx",
 	}
 
-	queue, err := channel.QueueDeclare(queueName, queueType == QueueTypeDurable, queueType == QueueTypeTransient, queueType == QueueTypeTransient, false, table)
+	queue, err := channel.QueueDeclare(queueName, queueType == SimpleQueueTypeDurable, queueType == SimpleQueueTypeTransient, queueType == SimpleQueueTypeTransient, false, table)
 	if err != nil {
 		return nil, amqp.Queue{}, err
 	}
