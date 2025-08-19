@@ -40,7 +40,7 @@ func main() {
 	}
 
 	// func (ch *Channel) QueueBind(name, key, exchange string, noWait bool, args Table) error
-	err = channel.QueueBind(queueName, routing.GameLogSlug, routing.ExchangePerilTopic, false, amqp.Table{})
+	err = channel.QueueBind(queueName, routing.GameLogSlug+".*", routing.ExchangePerilTopic, false, amqp.Table{})
 	if err != nil {
 		fmt.Println("Something happened binding the queue.")
 		return

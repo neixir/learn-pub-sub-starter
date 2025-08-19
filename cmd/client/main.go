@@ -41,6 +41,15 @@ func main() {
 		return
 	}
 
+	/*
+		queueName := routing.GameLogSlug + "." + username
+		channel, _, err = pubsub.DeclareAndBind(conn, routing.ExchangePerilDirect, queueName, routing.GameLogSlug, pubsub.SimpleQueueTypeTransient)
+		if err != nil {
+			fmt.Println("Something happened declaring and binding.")
+			return
+		}
+	*/
+
 	// Create the game state
 	gamestate := gamelogic.NewGameState(username)
 
@@ -58,7 +67,7 @@ func main() {
 	}
 
 	// CH5 L6
-	err = pubsub.SubscribeJSON(conn, routing.ExchangePerilTopic, "war", routing.WarRecognitionsPrefix+".*", pubsub.SimpleQueueTypeDurable, handlerWar(gamestate))
+	err = pubsub.SubscribeJSON(conn, routing.ExchangePerilTopic, "war", routing.WarRecognitionsPrefix+".*", pubsub.SimpleQueueTypeDurable, handlerWar(gamestate, channel))
 	if err != nil {
 		//fmt.Println(err.Error())
 		log.Fatal(err.Error())

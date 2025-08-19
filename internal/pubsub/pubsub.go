@@ -1,7 +1,9 @@
 package pubsub
 
 import (
+	"bytes"
 	"context"
+	"encoding/gob"
 	"encoding/json"
 	"fmt"
 
@@ -34,9 +36,9 @@ func PublishJSON[T any](ch *amqp.Channel, exchange, key string, val T) error {
 		Body:        b,
 	}
 
-	ch.PublishWithContext(context.Background(), exchange, key, false, false, pub)
+	err = ch.PublishWithContext(context.Background(), exchange, key, false, false, pub)
 
-	return nil
+	return err
 }
 
 func DeclareAndBind(
@@ -121,3 +123,46 @@ func SubscribeJSON[T any](
 
 	return nil
 }
+
+func PublishGob[T any](ch *amqp.Channel, exchange, key string, val T) error {
+	//b, err := json.Marshal(val)
+	var buf bytes.Buffer
+	enc := gob.NewEncoder(&buf)
+	err := enc.Encode(val)
+
+	if err != nil {
+		return err
+	}
+
+	pub := amqp.Publishing{
+		ContentType: "application/gob",
+		Body:        buf.Bytes(),
+	}
+
+	err = ch.PublishWithContext(context.Background(), exchange, key, false, false, pub)
+
+	return err
+}
+
+/*
+func encode(gl GameLog) ([]byte, error) {
+	var buf bytes.Buffer
+	enc := gob.NewEncoder(&buf)
+	err := enc.Encode(gl)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
+}
+
+func decode(data []byte) (GameLog, error) {
+	var gamelog GameLog
+	buf := bytes.NewBuffer(data)
+	dec := gob.NewDecoder(buf)
+	err := dec.Decode(&gamelog)
+
+	return gamelog, err
+}
+*/

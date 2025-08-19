@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/bootdotdev/learn-pub-sub-starter/internal/gamelogic"
 	"github.com/bootdotdev/learn-pub-sub-starter/internal/pubsub"
@@ -55,26 +56,56 @@ func handlerMove(gs *gamelogic.GameState, channel *amqp.Channel) func(gamelogic.
 	}
 }
 
-func handlerWar(gs *gamelogic.GameState) func(gamelogic.RecognitionOfWar) pubsub.Acktype {
+func handlerWar(gs *gamelogic.GameState, channel *amqp.Channel) func(gamelogic.RecognitionOfWar) pubsub.Acktype {
 	return func(rw gamelogic.RecognitionOfWar) pubsub.Acktype {
 		defer fmt.Print("> ")
 
-		outcome, _, _ := gs.HandleWar(rw)
+		outcome, winner, loser := gs.HandleWar(rw)
 
+		var msg string
 		switch outcome {
 		case gamelogic.WarOutcomeNotInvolved:
 			return pubsub.NackRequeue
 		case gamelogic.WarOutcomeNoUnits:
 			return pubsub.NackDiscard
 		case gamelogic.WarOutcomeOpponentWon:
-			return pubsub.Ack
+			msg = fmt.Sprintf("%s won a war against %s", winner, loser)
 		case gamelogic.WarOutcomeYouWon:
-			return pubsub.Ack
+			msg = fmt.Sprintf("%s won a war against %s", winner, loser)
 		case gamelogic.WarOutcomeDraw:
-			return pubsub.Ack
+			msg = fmt.Sprintf("A war between %s and %s resulted in a draw", winner, loser)
 		default:
-			fmt.Print("error, outcome not valid")
+			fmt.Println("error, outcome not valid")
 			return pubsub.NackDiscard
 		}
+
+		if msg != "" {
+			fmt.Printf("Publiquem log: [%s].\n", msg)
+			fmt.Printf("routing.ExchangePerilTopic = %s\n", routing.ExchangePerilTopic)
+			fmt.Printf("routing.GameLogSlug+\".\"+gs.GetUsername() = %s\n", routing.GameLogSlug+"."+gs.GetUsername())
+
+			gl := routing.GameLog{
+				CurrentTime: time.Now(),
+				Message:     msg,
+				Username:    gs.GetUsername(),
+			}
+
+			err := PublishGamelogic(channel, routing.ExchangePerilTopic, routing.GameLogSlug+"."+gs.GetUsername(), gl)
+			return err
+		}
+
+		// No hauriem d'arribar aqui
+		return pubsub.NackDiscard
 	}
+}
+
+func PublishGamelogic(channel *amqp.Channel, exchange, key string, gl routing.GameLog) pubsub.Acktype {
+	err := pubsub.PublishGob(channel, exchange, key, gl)
+	if err != nil {
+		fmt.Printf("error: %s\n", err)
+		return pubsub.NackRequeue
+	}
+
+	return pubsub.Ack
+
 }
