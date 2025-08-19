@@ -80,10 +80,6 @@ func handlerWar(gs *gamelogic.GameState, channel *amqp.Channel) func(gamelogic.R
 		}
 
 		if msg != "" {
-			fmt.Printf("Publiquem log: [%s].\n", msg)
-			fmt.Printf("routing.ExchangePerilTopic = %s\n", routing.ExchangePerilTopic)
-			fmt.Printf("routing.GameLogSlug+\".\"+gs.GetUsername() = %s\n", routing.GameLogSlug+"."+gs.GetUsername())
-
 			gl := routing.GameLog{
 				CurrentTime: time.Now(),
 				Message:     msg,

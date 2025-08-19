@@ -8,7 +8,6 @@ import (
 	"github.com/bootdotdev/learn-pub-sub-starter/internal/pubsub"
 	"github.com/bootdotdev/learn-pub-sub-starter/internal/routing"
 
-	//"github.com/bootdotdev/learn-pub-sub-starter/internal/handlers"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 

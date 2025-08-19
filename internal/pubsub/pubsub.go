@@ -124,8 +124,8 @@ func SubscribeJSON[T any](
 	return nil
 }
 
+// Adaptat de PublishJSON
 func PublishGob[T any](ch *amqp.Channel, exchange, key string, val T) error {
-	//b, err := json.Marshal(val)
 	var buf bytes.Buffer
 	enc := gob.NewEncoder(&buf)
 	err := enc.Encode(val)
@@ -142,6 +142,52 @@ func PublishGob[T any](ch *amqp.Channel, exchange, key string, val T) error {
 	err = ch.PublishWithContext(context.Background(), exchange, key, false, false, pub)
 
 	return err
+}
+
+// Adaptat de SubscribeJSON
+func SubscribeGob[T any](
+	conn *amqp.Connection,
+	exchange,
+	queueName,
+	key string,
+	queueType SimpleQueueType, // an enum to represent "durable" or "transient"
+	handler func(T) Acktype,
+) error {
+	channel, queue, err := DeclareAndBind(conn, exchange, queueName, key, queueType)
+	if err != nil {
+		return err
+	}
+
+	deliveries, err := channel.Consume(queue.Name, "", false, false, false, false, nil)
+	if err != nil {
+		return err
+	}
+
+	go func() {
+		for msg := range deliveries {
+			var t T
+			buf := bytes.NewBuffer(msg.Body)
+			dec := gob.NewDecoder(buf)
+			err := dec.Decode(&t)
+			if err != nil {
+				// TODO?
+			}
+			ack := handler(t)
+
+			// Depending on the returned "acktype", the goroutine that calls the handler should either call...
+			switch ack {
+			case Ack:
+				msg.Ack(false)
+			case NackRequeue:
+				msg.Nack(false, true)
+			case NackDiscard:
+				msg.Nack(false, false)
+			}
+
+		}
+	}()
+
+	return nil
 }
 
 /*
