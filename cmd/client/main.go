@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"log"
+	"strconv"
+	"time"
 
 	"github.com/bootdotdev/learn-pub-sub-starter/internal/gamelogic"
 	"github.com/bootdotdev/learn-pub-sub-starter/internal/pubsub"
@@ -102,7 +104,36 @@ func main() {
 		case "help":
 			gamelogic.PrintClientHelp()
 		case "spam":
-			fmt.Println("Spamming not allowed yet!")
+			//fmt.Println("Spamming not allowed yet!")
+			// 1. Ensure that a second "word" was provided in the command. E.g. spam 10 or spam 1000.
+			// Convert that word into an integer.
+			if len(input) > 1 {
+				n, err := strconv.Atoi(input[1])
+				if err != nil {
+					fmt.Println("Not a number")
+					break
+				}
+
+				// 2. Do the following n times, where n is the integer from the command:
+
+				for i := 0; i < n; i++ { //i := range n {
+
+					// 2.1 Use gamelogic.GetMaliciousLog to get a malicious log message.
+					msg := gamelogic.GetMaliciousLog()
+
+					// 2.2 Publish the log message (a struct) to Rabbit. Use the following parameters:
+					// Exchange: peril_topic
+					// Key: game_logs.username, where username is the username of the player
+					gl := routing.GameLog{
+						CurrentTime: time.Now(),
+						Message:     msg,
+						Username:    username,
+					}
+					PublishGamelogic(channel, routing.ExchangePerilTopic, routing.GameLogSlug+"."+username, gl)
+				}
+
+			}
+
 		case "quit":
 			gamelogic.PrintQuit()
 			quitGame = true

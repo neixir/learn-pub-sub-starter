@@ -86,8 +86,9 @@ func handlerWar(gs *gamelogic.GameState, channel *amqp.Channel) func(gamelogic.R
 				Username:    gs.GetUsername(),
 			}
 
-			err := PublishGamelogic(channel, routing.ExchangePerilTopic, routing.GameLogSlug+"."+gs.GetUsername(), gl)
-			return err
+			//err := PublishGamelogic(channel, routing.ExchangePerilTopic, routing.GameLogSlug+"."+gs.GetUsername(), gl)
+			pubsub.PublishJSON(channel, routing.ExchangePerilTopic, routing.GameLogSlug+"."+gs.GetUsername(), gl)
+			//return err
 		}
 
 		// No hauriem d'arribar aqui

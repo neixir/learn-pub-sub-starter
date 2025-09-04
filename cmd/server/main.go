@@ -32,23 +32,6 @@ func main() {
 		return
 	}
 
-	/*
-		queueName := routing.GameLogSlug
-		_, err = channel.QueueDeclare(queueName, true, false, false, false, nil)
-		if err != nil {
-			fmt.Println("Something happened declaring the queue.")
-			return
-		}
-
-
-		// func (ch *Channel) QueueBind(name, key, exchange string, noWait bool, args Table) error
-		err = channel.QueueBind(queueName, routing.GameLogSlug+".*", routing.ExchangePerilTopic, false, amqp.Table{})
-		if err != nil {
-			fmt.Println("Something happened binding the queue.")
-			return
-		}
-	*/
-
 	pubsub.SubscribeGob(conn, routing.ExchangePerilTopic, routing.GameLogSlug, routing.GameLogSlug+".*", pubsub.SimpleQueueTypeDurable, handlerLog())
 
 	data := routing.PlayingState{}
