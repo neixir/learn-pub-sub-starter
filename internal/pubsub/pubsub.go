@@ -90,7 +90,7 @@ func SubscribeJSON[T any](
 	// func (ch *Channel) Qos(prefetchCount, prefetchSize int, global bool) error
 	// CH7 L5 https://www.boot.dev/lessons/e1e10f9d-beda-4d0e-b948-a7ab800fb936
 	// Update your consumption code. It should call channel.Qos before calling channel.Consume. Limit the prefetch count to 10.
-	err = channel.Qos(10, 1, true)
+	// err = channel.Qos(10, 1, true)
 
 	// 2. Get a new chan of amqp.Delivery structs by using the channel.Consume method.
 	// 2.1. Use an empty string for the consumer name so that it will be auto-generated
